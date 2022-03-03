@@ -1,5 +1,6 @@
 // include the library code:
-#include <LiquidCrystal.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
 
 // initialize the library by associating any needed LCD interface pin
 // with the arduino pin number it is connected to
@@ -8,7 +9,7 @@
 //motor
 #include <Adafruit_MotorShield.h>
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2);
+Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 1);
 
 //Digital Pins
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2; //LCD
@@ -56,7 +57,7 @@ byte downArrow[8] =
 int menuLength = 8;
 
 //Value Setup
-LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 
 int xPosition = 0;
 int yPosition = 0;
@@ -71,7 +72,7 @@ bool inCinematic;
 bool inScan;
 bool inControl;
 
-void displayTwoLine(LiquidCrystal lcd, String line_one, String line_two){
+void displayTwoLine(LiquidCrystal_I2C lcd, String line_one, String line_two){
   lcd.setCursor(1, 0);
   lcd.print(line_one);
   //Serial.println(line_one);
@@ -80,26 +81,26 @@ void displayTwoLine(LiquidCrystal lcd, String line_one, String line_two){
   //Serial.println(line_two);
 }
 
-void displayCursor(LiquidCrystal lcd, int cursorPos, int length){
+void displayCursor(LiquidCrystal_I2C lcd, int cursorPos, int menuLength){
   if(cursorPos == 0){
     lcd.setCursor(0, 0);
     lcd.print(">");
     lcd.setCursor(15, 1);
-    lcd.write(byte(1));
+    lcd.write(1);
   }
-  else if(cursorPos == length-1){
+  else if(cursorPos == menuLength-1){
     lcd.setCursor(0, 1);
     lcd.print(">");
     lcd.setCursor(15, 0);
-    lcd.write(byte(0));
+    lcd.write(0);
   }
   else{
     lcd.setCursor(0, 0);
     lcd.print(">");
     lcd.setCursor(15, 0);
-    lcd.write(byte(0));
+    lcd.write(0);
     lcd.setCursor(15, 1);
-    lcd.write(byte(1));
+    lcd.write(1);
   }
 
 }
@@ -110,10 +111,10 @@ void joyStickMenuControl(){
 
 void setup() {
   Serial.begin(9600);           // set up Serial library at 9600 bps
+  lcd.init();                      // initialize the lcd 
+  lcd.backlight();
   
   // set up the LCD's number of columns and rows:
-  lcd.begin(16, 2);
-
   //joyStick setup
   pinMode(VRx, INPUT);
   pinMode(VRy, INPUT);
@@ -126,6 +127,9 @@ void setup() {
 
   lcd.createChar(0, upArrow);
   lcd.createChar(1, downArrow);
+
+  AFMS.begin();
+  myMotor->setSpeed(10000);  // 10 rpm
 }
 
 void loop() {
@@ -139,18 +143,13 @@ void loop() {
   mapX = map(xPosition, 0, 1023, -512, 512);
   mapY = map(yPosition, 0, 1023, -512, 512);
   
-//  Serial.print("X: ");
-//  Serial.print(mapX);
-//  Serial.print(" | Y: ");
-//  Serial.print(mapY);
-//  Serial.print(" | Button: ");
-//  Serial.println(SW_state);
   if(inMenu){
     if(mapY > 100 && cursorPos+1 == menuLength-1){
       cursorPos++;
       lcd.clear();
       displayTwoLine(lcd, menuList[menuPos], menuList[menuPos+1]);
       displayCursor(lcd, cursorPos, menuLength);
+      delay(200);
     }
     else if(mapY > 100 && cursorPos+1 < menuLength-1){
       menuPos++;
@@ -158,12 +157,14 @@ void loop() {
       lcd.clear();
       displayTwoLine(lcd, menuList[menuPos], menuList[menuPos+1]);
       displayCursor(lcd, cursorPos, menuLength);
+      delay(200);
     }
     else if(mapY < -100 && cursorPos+1 == menuLength){
       cursorPos--;
       lcd.clear();
       displayTwoLine(lcd, menuList[menuPos], menuList[menuPos+1]);
       displayCursor(lcd, cursorPos, menuLength);
+      delay(200);
     }
     else if(mapY < -100 && cursorPos > 0){
       cursorPos--;
@@ -171,22 +172,21 @@ void loop() {
       lcd.clear();
       displayTwoLine(lcd, menuList[menuPos], menuList[menuPos+1]);
       displayCursor(lcd, cursorPos, menuLength);
+      delay(200);
     }
-
+    
   }
 
 
 
   if(SW_state == 0){
-    displayTwoLine(lcd, menuList[menuPos], menuList[menuPos+1]);
+    myMotor->release();
+  }
+  else{
+    
   }
 
 
-
-
-
-  
-  delay(200);
 
   
 
