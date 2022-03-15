@@ -9,7 +9,7 @@
 //motor
 #include <Adafruit_MotorShield.h>
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();
-Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 1);
+Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2);
 
 //Digital Pins
 int SW = 6; //Joystick
@@ -271,8 +271,8 @@ void loop() {
   yPosition = analogRead(VRy);
   SW_state = digitalRead(SW);
   reSW_state = digitalRead(returnSW);
-  mapX = map(xPosition, 0, 1023, -512, 512);
-  mapY = map(yPosition, 0, 1023, -512, 512);
+  mapX = -map(xPosition, 0, 1023, -512, 512);
+  mapY = -map(yPosition, 0, 1023, -512, 512);
 
 
   Serial.print(reSW_state);
@@ -360,13 +360,13 @@ void loop() {
 
   }
   else if(currentMenu == "START"){
-    int step = stepPerTurn/1.8;
-    int turnsLeft= 200 / step;
+    int stepPerRotate = 200/stepPerTurn;
+    int turnsLeft= stepPerTurn;
     float inProgress = true;
     while (turnsLeft > 0 && inProgress){
       displayTwoLine(lcd, "Job Progress", String(turnsLeft));
       delay(pauseTime);
-      myMotor->step(step, FORWARD, DOUBLE);
+      myMotor->step(stepPerRotate, FORWARD, DOUBLE);
       turnsLeft -= 1;
       lcd.clear();
 
@@ -384,12 +384,12 @@ void loop() {
         inProgress = false;
       }
     }
-    myMotor->release();
     currentMenu = "scan";
     lcd.clear();
     displayTwoLine(lcd, scanMenu[menuPos], scanMenu[menuPos+1]);
     displayCursor(lcd, cursorPos, scanMenuLength);
     delay(100);
+    myMotor->release();
   }
 
 
@@ -399,5 +399,5 @@ void loop() {
   // set the cursor to column 0, line 1
   // (note: line 1 is the second row, since counting begins with 0):
 
-  delay(10);
+  delay(200);
 }
