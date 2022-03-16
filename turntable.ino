@@ -12,7 +12,7 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_StepperMotor *myMotor = AFMS.getStepper(200, 2);
 
 //Digital Pins
-int SW = 6; //Joystick
+int SW = 12; //Joystick
 int returnSW = 5; //Return btn
 
 //Analog Pins
@@ -84,7 +84,7 @@ byte rightArrow[] = {
   B00000
 };
 
-int deadZone = 250;
+int deadZone = 200;
 
 
 //Value Setup
